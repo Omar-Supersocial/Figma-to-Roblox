@@ -214,11 +214,11 @@ function ExportImage(Element, Properties, CustomExport) {
 const PropertyTypes = {
     ["children"]: (Element, Properties) => {
         if (Properties.NoChildren || Properties.Children == undefined || Properties.Class == "ImageLabel") return;
-        
+
         for (var i = 0; i < Element.children.length; i++) {
             Properties.Children.push(GetMainProperties(Element.children[i], Properties));
         }
-        
+
         /*
         // TODO: Re-implement masks
         var Mask = [];
@@ -272,13 +272,13 @@ const PropertyTypes = {
         if (Element.fills.length > 1) {
             return QuickClose("Multiple fills are unsupported, on element: " + Element.name);
         } else if (Element.fills.length == 0) {
-            Properties.BackgroundColor3 = {R: 0, G: 0, B: 0}; // TODO: default to missing texture
+            Properties.BackgroundColor3 = { R: 0, G: 0, B: 0 };
         }
-    
+
         const Filler = Element.fills[0];
 
         if (!Filler) return;
-    
+
         switch (Filler.type) {
             case "SOLID":
                 var Colour = {
@@ -296,9 +296,9 @@ const PropertyTypes = {
                 break;
             case "GRADIENT_LINEAR":
                 if (Properties.Class == "TextLabel") {
-                    Properties.TextColor3 = {R: 1, G: 1, B: 1};
+                    Properties.TextColor3 = { R: 1, G: 1, B: 1 };
                 } else {
-                    Properties.BackgroundColor3 = {R: 1, G: 1, B: 1};
+                    Properties.BackgroundColor3 = { R: 1, G: 1, B: 1 };
                 }
 
                 const Transform = Filler.gradientTransform;
@@ -523,11 +523,11 @@ const ElementTypes = {
             BorderSizePixel: 0,
             GroupOpacity: Element.opacity,
             Visible: Element.visible,
-            Position: {
+            _OriginalPosition: {
                 X: Element.x,
                 Y: Element.y
             },
-            _OriginalPosition: {
+            Position: {
                 X: Element.x,
                 Y: Element.y
             },
@@ -591,7 +591,7 @@ const ElementTypes = {
 
             Properties.BackgroundTransparency = Properties.GroupOpacity // simple fix
         }
-    
+
         if (PropertyTypes["exportSettings"](Element, Properties) === false) {
             for (const Property in Element) {
                 if (Property in PropertyTypes) {
@@ -600,7 +600,7 @@ const ElementTypes = {
                 }
             }
         }
-    
+
         return Properties;
     },
     ["RECTANGLE"]: (Element, Parent) => {
@@ -632,7 +632,7 @@ const ElementTypes = {
                 Properties.Position.Y -= Parent._OriginalPosition.Y;
             }
         }
-    
+
         if (PropertyTypes["exportSettings"](Element, Properties) === false) {
             for (const Property in Element) {
                 if (Property in PropertyTypes) {
@@ -641,7 +641,7 @@ const ElementTypes = {
                 }
             }
         }
-    
+
         return Properties;
     },
     ["ELLIPSE"]: (Element, Parent) => {
@@ -682,7 +682,7 @@ const ElementTypes = {
                 Properties.Position.Y -= Parent._OriginalPosition.Y;
             }
         }
-    
+
         if (PropertyTypes["exportSettings"](Element, Properties) === false) {
             for (const Property in Element) {
                 if (Property in PropertyTypes) {
@@ -691,7 +691,7 @@ const ElementTypes = {
                 }
             }
         }
-    
+
         return Properties;
     },
     ["TEXT"]: (Element, Parent) => {
@@ -749,7 +749,7 @@ const ElementTypes = {
                 }
             }
         }
-    
+
         return Properties;
     },
     ["OTHER"]: (Element, Parent) => {
@@ -785,7 +785,7 @@ const ElementTypes = {
         if (Element["children"]) PropertyTypes["children"](Element, Properties);
 
         ExportImage(Element, Properties);
-    
+
         return Properties;
     }
 }
@@ -929,9 +929,6 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
     if (Properties.UploadId !== undefined && ImageExports[Properties.UploadId] !== undefined) ExtendXML(`<string name="Image"><url>${ImageExports[Properties.UploadId].ImageId}</url></string>`); // Image is exported
     else if (Properties.Image !== undefined) ExtendXML(`<string name="Image">${Properties.Image}</string>`); // Image is not exported
     if (Properties.ImageTransparency !== undefined) ExtendXML(`<float name="ImageTransparency">${1 - LimitDecimals(Properties.ImageTransparency, 3)}</float>`);
-    //if (Properties.Position !== undefined) ExtendXML(`<UDim2 name="Position"><XS>0</XS><XO>${LimitDecimals(Properties.Position.X, 0)}</XO><YS>0</YS><YO>${LimitDecimals(Properties.Position.Y, 0)}</YO></UDim2>`);
-    //if (Properties.Size !== undefined) ExtendXML(`<UDim2 name="Size"><XS>0</XS><XO>${LimitDecimals(Properties.Size.X, 0)}</XO><YS>0</YS><YO>${LimitDecimals(Properties.Size.Y, 0)}</YO></UDim2>`);
-    //if (Properties.Rotation !== undefined) ExtendXML(`<float name="Rotation">${LimitDecimals(Properties.Rotation, 3)}</float>`);
     if (Properties.Visible !== undefined) ExtendXML(`<bool name="Visible">${Properties.Visible}</bool>`);
     if (Properties.Enabled !== undefined) ExtendXML(`<bool name="Enabled">${Properties.Enabled}</bool>`);
 
@@ -956,7 +953,7 @@ function ConvertToRoblox(Objects) { // Converts the code into roblox xml format
     for (var i = 0; i < Objects.length; i++) {
         XML += CreateRobloxElement(Objects[i]);
     }
-    
+
     return XML + '</roblox>';
 }
 
@@ -1021,14 +1018,14 @@ figma.ui.onmessage = msg => {
                 if (!HandledError) {
                     throw e;
                 }
-            
+
                 console.warn(e);
             }
             break;
         case "close-plugin":
             figma.closePlugin();
             break;
-        case "SetAsync": 
+        case "SetAsync":
             figma.clientStorage.setAsync(msg.key, msg.value);
             break;
         case "FetchAsync":
