@@ -1,4 +1,4 @@
-<a id="download" href="#" download="export.rbxmx" style="display:none;">Download</a>
+<a id="download" href="#" download="export.lua" style="display:none;">Download</a>
 <button id="convselect">Convert Selection</button>
 <button id="closeplugin">Close Plugin</button>
 <div></div>
@@ -17,8 +17,12 @@
 <label for="exportImages">Export Images</label>
 <input type="checkbox" id="exportImages" name="Export Images" />
 <!-- get things :) -->
-<script src="https://unpkg.com/axios@1.4.0/dist/axios.min.js" integrity="sha384-I4Qw/vWb/sK/7VwepTtkaq636YLYClbEgEwKp3ueUCvjiLFrcoKUFAY5mOl40Fj3" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/jszip@3.7.1/dist/jszip.js" integrity="sha384-Lqk2um7o0W+Ke7IGh8Mk9EE7g2IrhepxXvttF/iw5hFqpMjFGKP4jcKYhNLAi/ZD" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/axios@1.4.0/dist/axios.min.js"
+    integrity="sha384-I4Qw/vWb/sK/7VwepTtkaq636YLYClbEgEwKp3ueUCvjiLFrcoKUFAY5mOl40Fj3"
+    crossorigin="anonymous"></script>
+<script src="https://unpkg.com/jszip@3.7.1/dist/jszip.js"
+    integrity="sha384-Lqk2um7o0W+Ke7IGh8Mk9EE7g2IrhepxXvttF/iw5hFqpMjFGKP4jcKYhNLAi/ZD"
+    crossorigin="anonymous"></script>
 <script>
     var CloudApiKey = ""
     var UserId = ""
@@ -54,7 +58,7 @@
     }
 
     parent.postMessage({ pluginMessage: { type: 'FetchAsync' } }, '*')
-    
+
     const DownloadLink = document.getElementById("download");
     var Images = [];
 
@@ -81,11 +85,11 @@
 
     onmessage = async (event) => {
         const { type, data } = event.data.pluginMessage;
-        
+
         switch (type) {
             case "Download":
                 DownloadLink.href = "data:text/xml;charset=utf-8," + encodeURIComponent(data);
-                DownloadLink.download = "export.rbxmx";
+                DownloadLink.download = "export.lua";
                 DownloadLink.click();
 
                 DownloadImages();
@@ -131,17 +135,17 @@
 
                         return Response.json();
                     })
-                    .then(Response => {
-                        if (Response.error) {
-                            parent.postMessage({ pluginMessage: { type: 'image-upload-fail', data: Response.error.message } }, '*')
-                        } else {
-                            Response.UploadId = data.UploadId
-                            parent.postMessage({ pluginMessage: { type: 'image-upload-success', data: Response } }, '*')
-                        }
-                    })
-                    .catch((Error) => {
-                        console.warn(Error);
-                    });
+                        .then(Response => {
+                            if (Response.error) {
+                                parent.postMessage({ pluginMessage: { type: 'image-upload-fail', data: Response.error.message } }, '*')
+                            } else {
+                                Response.UploadId = data.UploadId
+                                parent.postMessage({ pluginMessage: { type: 'image-upload-success', data: Response } }, '*')
+                            }
+                        })
+                        .catch((Error) => {
+                            console.warn(Error);
+                        });
                 } catch (Error) {
                     parent.postMessage({ pluginMessage: { type: 'image-upload-fail', data: "An unexpected error occured, is the proxy url correct?" } }, '*')
                     console.warn(Error);
