@@ -896,8 +896,8 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
             var BoundingBox = Properties.Element.absoluteBoundingBox;
 
             Properties.Position = {
-                X: BoundingBox.x + ((BoundingBox.width - Size.X) / 2),
-                Y: BoundingBox.y + ((BoundingBox.height - Size.Y) / 2)
+                X: Properties.Position.X + ((BoundingBox.width - Size.X) / 2),
+                Y: Properties.Position.Y + ((BoundingBox.height - Size.Y) / 2)
             }
         }
     }
