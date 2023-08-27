@@ -468,7 +468,7 @@ const PropertyTypes = {
                 },
                 Transparency: Element.opacity,
                 Thickness: Element.strokeWeight,
-                LineJoinMode: Element.strokeJoin.substring(0, 1).toUpperCase() + Element.strokeJoin.substring(1).toLowerCase(),
+                //LineJoinMode: Element.strokeJoin.substring(0, 1).toUpperCase() + Element.strokeJoin.substring(1).toLowerCase(),
                 Children: [{
                     Class: "UIGradient",
                     Type: "UIGradient",
@@ -508,7 +508,7 @@ const PropertyTypes = {
             },
             Transparency: Element.opacity,
             Thickness: Element.strokeWeight,
-            LineJoinMode: Element.strokeJoin.substring(0, 1).toUpperCase() + Element.strokeJoin.substring(1).toLowerCase(),
+            //LineJoinMode: Element.strokeJoin.substring(0, 1).toUpperCase() + Element.strokeJoin.substring(1).toLowerCase(),
             Children: []
         });
     }
