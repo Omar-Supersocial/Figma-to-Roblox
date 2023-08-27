@@ -888,7 +888,7 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
         ExtendXML(`<UDim2 name="Size"><XS>0</XS><XO>${LimitDecimals(Size.X, 0)}</XO><YS>0</YS><YO>${LimitDecimals(Size.Y, 0)}</YO></UDim2>`);
     }
 
-    if (Properties.Rotation !== undefined && Properties.Rotation !== 0) {
+    if (Properties.Class != "ImageLabel" && Properties.Rotation !== undefined && Properties.Rotation !== 0) {
         ExtendXML(`<float name="Rotation">${LimitDecimals(Properties.Rotation, 3)}</float>`);
 
         if (Properties.Position !== undefined && Properties.Size !== undefined) {
