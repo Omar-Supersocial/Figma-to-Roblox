@@ -515,6 +515,49 @@ const PropertyTypes = {
 }
 
 const ElementTypes = {
+    ["COMPONENT_SET"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
+    ["COMPONENT"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
+    ["NOT_RELATIVE_GROUP"]: (Element, Parent) => {
+        var Properties = {
+            Class: "Frame",
+            Type: Element.type,
+            Name: Element.name,
+            BackgroundTransparency: 0,
+            BorderSizePixel: 0,
+            GroupOpacity: Element.opacity,
+            Visible: Element.visible,
+            Position: {
+                X: Element.x,
+                Y: Element.y
+            },
+            Size: {
+                X: Element.width,
+                Y: Element.height
+            },
+            Children: [],
+            Parent: Parent,
+            Element: Element,
+        }
+
+        if (Parent !== undefined) {
+            if (Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity; // maths :)
+            if (Parent._OriginalPosition !== undefined) {
+                Properties.Position.X -= Parent._OriginalPosition.X;
+                Properties.Position.Y -= Parent._OriginalPosition.Y;
+            }
+        }
+
+        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
+            for (const Property in Element) {
+                if (Property in PropertyTypes) {
+                    if (Property === "exportSettings") continue; // Already done
+                    if (PropertyTypes[Property](Element, Properties) === false) return false;
+                }
+            }
+        }
+
+        return Properties;
+    },
     ["GROUP"]: (Element, Parent) => {
         var Properties = {
             Class: "Frame",
