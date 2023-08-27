@@ -982,7 +982,7 @@ const FusionFunctionCreators = {
     "Image": createStringFusionFunction,
     "Color": createColorFusionFunction,
     "Name": createStringFusionFunction,
-    "Text": createStringFusionFunction,
+    "Text": createMultiLineFusionFunction,
 };
 
 function createFontFusionFunction(font) {
@@ -1014,6 +1014,11 @@ function createPixelSizeFusionFunction(number) {
 
 function createColorFusionFunction(color) {
     return get255Color(color);
+}
+
+
+function createMultiLineFusionFunction(str) {
+    return `[[${str}]]`;
 }
 
 function createStringFusionFunction(str) {
