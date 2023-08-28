@@ -42,43 +42,6 @@
 
 */
 
-var HandledError = false;
-var CurrentNotif;
-var ImageExports = {};
-var QueuedImages = 0;
-
-function QuickClose(Message) {
-    if (CurrentNotif !== undefined) CurrentNotif.cancel();
-
-    HandledError = true;
-    figma.notify(`Error: ` + Message, { timeout: 10000 });
-    figma.closePlugin();
-
-    throw new Error(Message);
-}
-
-function Notify(Message) {
-    if (CurrentNotif !== undefined) CurrentNotif.cancel();
-
-    CurrentNotif = figma.notify(Message);
-}
-
-function getGradientRotation(gradientTransform) {
-    const a = gradientTransform[0][0];
-    const b = gradientTransform[0][1];
-    const angle = Math.atan2(b, a) * 180 / Math.PI;
-
-    return angle >= 0 ? angle : angle + 360;
-}
-
-function LimitDecimals(Number, Decimals) { // Limit decimals to x places and round up/down
-    if (typeof Number !== "number") return 0;
-    if (isNaN(Number)) return 0;
-    if (Decimals !== undefined && isNaN(Decimals)) Decimals = null;
-
-    return parseFloat(Number.toFixed(Decimals));
-}
-
 const Fonts = {
     ["Thin"]: {
         Weight: 100,
@@ -154,23 +117,42 @@ const Fonts = {
     },
 }
 
-const LineJoinModes = [
-    "Round",
-    "Bevel",
-    "Miter"
-]
+var HandledError = false;
+var CurrentNotif;
+var ImageExports = {};
+var QueuedImages = 0;
 
-const TextXAlignments = [
-    "LEFT",
-    "RIGHT",
-    "CENTER",
-]
+function QuickClose(Message) {
+    if (CurrentNotif !== undefined) CurrentNotif.cancel();
 
-const TextYAlignments = [
-    "TOP",
-    "CENTER",
-    "BOTTOM",
-]
+    HandledError = true;
+    figma.notify(`Error: ` + Message, { timeout: 10000 });
+    figma.closePlugin();
+
+    throw new Error(Message);
+}
+
+function Notify(Message) {
+    if (CurrentNotif !== undefined) CurrentNotif.cancel();
+
+    CurrentNotif = figma.notify(Message);
+}
+
+function getGradientRotation(gradientTransform) {
+    const a = gradientTransform[0][0];
+    const b = gradientTransform[0][1];
+    const angle = Math.atan2(b, a) * 180 / Math.PI;
+
+    return angle >= 0 ? angle : angle + 360;
+}
+
+function limitDecimals(Number, Decimals) { // Limit decimals to x places and round up/down
+    if (typeof Number !== "number") return 0;
+    if (isNaN(Number)) return 0;
+    if (Decimals !== undefined && isNaN(Decimals)) Decimals = null;
+
+    return parseFloat(Number.toFixed(Decimals));
+}
 
 function Random() {
     return ((Math.random() * Math.random()) * 9e15) ^ Math.random(); // It's good enough
@@ -410,7 +392,7 @@ const PropertyTypes = {
                 } else {
                     var Colour = Font.fills[0].color;
 
-                    NextTextSegment += `color="rgb(${LimitDecimals(Colour.r * 255)},${LimitDecimals(Colour.g * 255)},${LimitDecimals(Colour.b * 255)})" `;
+                    NextTextSegment += `color="rgb(${limitDecimals(Colour.r * 255)},${limitDecimals(Colour.g * 255)},${limitDecimals(Colour.b * 255)})" `;
                     NextTextSegment += `transparency="${1 - Font.fills[0].opacity}"`
                 }
             }
@@ -836,38 +818,57 @@ const ElementTypes = {
 
 // ^^ Couldn't get this to work, so I just copied the code from Conversions.js
 
-function CreateRobloxElement(Properties) { // Creates the roblox xml for the element
+// XML Exporting
+const LineJoinModes = [
+    "Round",
+    "Bevel",
+    "Miter"
+]
+
+const TextXAlignments = [
+    "LEFT",
+    "RIGHT",
+    "CENTER",
+]
+
+const TextYAlignments = [
+    "TOP",
+    "CENTER",
+    "BOTTOM",
+]
+
+function createRobloxElement(Properties) { // Creates the roblox xml for the element
     var XML = "";
 
-    function ExtendXML(String) {
+    function extendXML(String) {
         XML += String;
     }
 
-    ExtendXML(`<Item class="${Properties.Class}" referent="RBX0">`);
-    ExtendXML(`<Properties>`);
+    extendXML(`<Item class="${Properties.Class}" referent="RBX0">`);
+    extendXML(`<Properties>`);
 
     // Add properties
 
-    ExtendXML(`<string name="Name">${(Properties.Name || Properties.Class || "Unknown").replace("\n", "")}</string>`);
+    extendXML(`<string name="Name">${(Properties.Name || Properties.Class || "Unknown").replace("\n", "")}</string>`);
 
     if (Properties.BackgroundColor3 !== undefined) {
         var Colour = Properties.BackgroundColor3;
 
         for (const Property in Colour) {
-            Colour[Property] = LimitDecimals(Colour[Property], 6);
+            Colour[Property] = limitDecimals(Colour[Property], 6);
         }
 
-        ExtendXML(`<Color3 name="BackgroundColor3"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
+        extendXML(`<Color3 name="BackgroundColor3"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
     }
 
     if (Properties.TextColor3 !== undefined) {
         var Colour = Properties.TextColor3;
 
         for (const Property in Colour) {
-            Colour[Property] = LimitDecimals(Colour[Property], 6);
+            Colour[Property] = limitDecimals(Colour[Property], 6);
         }
 
-        ExtendXML(`<Color3 name="TextColor3"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
+        extendXML(`<Color3 name="TextColor3"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
     }
 
     if (Properties.Colour !== undefined) {
@@ -875,10 +876,10 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
 
         if (Colour["R"] !== undefined) {
             for (const Property in Colour) {
-                Colour[Property] = LimitDecimals(Colour[Property], 6);
+                Colour[Property] = limitDecimals(Colour[Property], 6);
             }
 
-            ExtendXML(`<Color3 name="Color"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
+            extendXML(`<Color3 name="Color"><R>${Colour.R}</R><G>${Colour.G}</G><B>${Colour.B}</B></Color3>`);
         } else {
             var ColourSeq = "";
             var Previous;
@@ -888,7 +889,7 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
                 var ColourVal = ColourStop.Colour;
 
                 for (const Property in ColourVal) {
-                    ColourVal[Property] = LimitDecimals(ColourVal[Property], 6);
+                    ColourVal[Property] = limitDecimals(ColourVal[Property], 6);
                 }
 
                 if (i === 0 && ColourStop.TimePosition !== 0) ColourSeq += `0 ${ColourVal.R} ${ColourVal.G} ${ColourVal.B} 0 `; // Add the first keyframe (if it doesn't exist
@@ -899,14 +900,14 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
 
             if (Previous.TimePosition !== 1) ColourSeq += `1 ${Previous.Colour.R} ${Previous.Colour.G} ${Previous.Colour.B} 0 `; // Add the last keyframe (if it doesn't exist)
 
-            ExtendXML(`<ColorSequence name="Color">${ColourSeq}</ColorSequence>`);
+            extendXML(`<ColorSequence name="Color">${ColourSeq}</ColorSequence>`);
         }
     }
 
     if (Properties.Transparency !== undefined) {
         const Transparency = Properties.Transparency;
 
-        if (!Array.isArray(Transparency)) ExtendXML(`<float name="Transparency">${1 - LimitDecimals(Properties.Transparency, 3)}</float>`);
+        if (!Array.isArray(Transparency)) extendXML(`<float name="Transparency">${1 - limitDecimals(Properties.Transparency, 3)}</float>`);
         else {
             var NumberSequence = "";
             var Previous;
@@ -914,25 +915,25 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
             for (var i = 0; i < Transparency.length; i++) {
                 var TransparencyStop = Transparency[i];
 
-                if (i === 0 && TransparencyStop.TimePosition !== 0) NumberSequence += `0 ${LimitDecimals(TransparencyStop.Transparency, 3)} 0 `; // Add the first keyframe (if it doesn't exist
+                if (i === 0 && TransparencyStop.TimePosition !== 0) NumberSequence += `0 ${limitDecimals(TransparencyStop.Transparency, 3)} 0 `; // Add the first keyframe (if it doesn't exist
 
                 Previous = TransparencyStop;
-                NumberSequence += `${TransparencyStop.TimePosition} ${LimitDecimals(TransparencyStop.Transparency, 3)} 0 `;
+                NumberSequence += `${TransparencyStop.TimePosition} ${limitDecimals(TransparencyStop.Transparency, 3)} 0 `;
             }
 
             if (Previous.TimePosition !== 1) NumberSequence += `1 ${Previous.Transparency} 0 `; // Add the last keyframe (if it doesn't exist)
 
-            ExtendXML(`<NumberSequence name="Transparency">${NumberSequence}</NumberSequence>`);
+            extendXML(`<NumberSequence name="Transparency">${NumberSequence}</NumberSequence>`);
         }
     }
 
     if (Properties.Size !== undefined) {
         var Size = Properties.Size;
-        ExtendXML(`<UDim2 name="Size"><XS>0</XS><XO>${LimitDecimals(Size.X, 0)}</XO><YS>0</YS><YO>${LimitDecimals(Size.Y, 0)}</YO></UDim2>`);
+        extendXML(`<UDim2 name="Size"><XS>0</XS><XO>${limitDecimals(Size.X, 0)}</XO><YS>0</YS><YO>${limitDecimals(Size.Y, 0)}</YO></UDim2>`);
     }
 
     if (Properties.Class != "ImageLabel" && Properties.Rotation !== undefined && Properties.Rotation !== 0) {
-        ExtendXML(`<float name="Rotation">${LimitDecimals(Properties.Rotation, 3)}</float>`);
+        extendXML(`<float name="Rotation">${limitDecimals(Properties.Rotation, 3)}</float>`);
 
         if (Properties.Position !== undefined && Properties.Size !== undefined) {
             var Size = Properties.Size;
@@ -947,62 +948,62 @@ function CreateRobloxElement(Properties) { // Creates the roblox xml for the ele
 
     if (Properties.Position !== undefined) {
         var Position = Properties.Position;
-        ExtendXML(`<UDim2 name="Position"><XS>0</XS><XO>${LimitDecimals(Position.X, 0)}</XO><YS>0</YS><YO>${LimitDecimals(Position.Y, 0)}</YO></UDim2>`);
+        extendXML(`<UDim2 name="Position"><XS>0</XS><XO>${limitDecimals(Position.X, 0)}</XO><YS>0</YS><YO>${limitDecimals(Position.Y, 0)}</YO></UDim2>`);
     }
 
-    if (Properties.BackgroundTransparency !== undefined) ExtendXML(`<float name="BackgroundTransparency">${1 - LimitDecimals(Properties.BackgroundTransparency, 3)}</float>`);
-    if (Properties.Thickness !== undefined) ExtendXML(`<float name="Thickness">${LimitDecimals(Properties.Thickness, 0)}</float>`);
-    if (Properties.LineJoinMode !== undefined) ExtendXML(`<Enum name="LineJoinMode">${LineJoinModes.indexOf(Properties.LineJoinMode)}</Enum>`);
-    if (Properties.CornerRadius !== undefined) ExtendXML(`<UDim2 name="CornerRadius"><S>${LimitDecimals(Properties.CornerRadius.S, 0)}</S><O>${LimitDecimals(Properties.CornerRadius.O, 0)}</O></UDim2>`);
-    if (Properties.BorderSizePixel !== undefined) ExtendXML(`<int name="BorderSizePixel">${LimitDecimals(Properties.BorderSizePixel, 0)}</int>`);
-    if (Properties.ClipsDescendants !== undefined) ExtendXML(`<bool name="ClipsDescendants">${Properties.ClipsDescendants}</bool>`);
-    if (Properties.TextTransparency !== undefined) ExtendXML(`<float name="TextTransparency">${1 - Properties.TextTransparency}</float>`);
-    if (Properties.TextSize !== undefined) ExtendXML(`<int name="TextSize">${LimitDecimals(Properties.TextSize, 0)}</int>`);
-    if (Properties.Text !== undefined) ExtendXML(`<string name="Text">${Properties.Text}</string>`);
-    if (Properties.TextWrapped !== undefined) ExtendXML(`<bool name="TextWrapped">${Properties.TextWrapped}</bool>`);
-    if (Properties.TextScaled !== undefined) ExtendXML(`<bool name="TextScaled">${Properties.TextScaled}</bool>`);
-    if (Properties.TextStrokeTransparency !== undefined) ExtendXML(`<float name="TextStrokeTransparency">${1 - Properties.TextStrokeTransparency}</float>`);
-    if (Properties.TextStrokeColor3 !== undefined) ExtendXML(`<Color3 name="TextStrokeColor3"><R>${LimitDecimals(Properties.TextStrokeColor3.R, 3)}</R><G>${LimitDecimals(Properties.TextStrokeColor3.G, 3)}</G><B>${LimitDecimals(Properties.TextStrokeColor3.B, 3)}</B></Color3>`);
-    if (Properties.TextXAlignment !== undefined) ExtendXML(`<token name="TextXAlignment">${TextXAlignments.indexOf(Properties.TextXAlignment)}</token>`);
-    if (Properties.TextYAlignment !== undefined) ExtendXML(`<token name="TextYAlignment">${TextYAlignments.indexOf(Properties.TextYAlignment)}</token>`);
+    if (Properties.BackgroundTransparency !== undefined) extendXML(`<float name="BackgroundTransparency">${1 - limitDecimals(Properties.BackgroundTransparency, 3)}</float>`);
+    if (Properties.Thickness !== undefined) extendXML(`<float name="Thickness">${limitDecimals(Properties.Thickness, 0)}</float>`);
+    if (Properties.LineJoinMode !== undefined) extendXML(`<Enum name="LineJoinMode">${LineJoinModes.indexOf(Properties.LineJoinMode)}</Enum>`);
+    if (Properties.CornerRadius !== undefined) extendXML(`<UDim2 name="CornerRadius"><S>${limitDecimals(Properties.CornerRadius.S, 0)}</S><O>${limitDecimals(Properties.CornerRadius.O, 0)}</O></UDim2>`);
+    if (Properties.BorderSizePixel !== undefined) extendXML(`<int name="BorderSizePixel">${limitDecimals(Properties.BorderSizePixel, 0)}</int>`);
+    if (Properties.ClipsDescendants !== undefined) extendXML(`<bool name="ClipsDescendants">${Properties.ClipsDescendants}</bool>`);
+    if (Properties.TextTransparency !== undefined) extendXML(`<float name="TextTransparency">${1 - Properties.TextTransparency}</float>`);
+    if (Properties.TextSize !== undefined) extendXML(`<int name="TextSize">${limitDecimals(Properties.TextSize, 0)}</int>`);
+    if (Properties.Text !== undefined) extendXML(`<string name="Text">${Properties.Text}</string>`);
+    if (Properties.TextWrapped !== undefined) extendXML(`<bool name="TextWrapped">${Properties.TextWrapped}</bool>`);
+    if (Properties.TextScaled !== undefined) extendXML(`<bool name="TextScaled">${Properties.TextScaled}</bool>`);
+    if (Properties.TextStrokeTransparency !== undefined) extendXML(`<float name="TextStrokeTransparency">${1 - Properties.TextStrokeTransparency}</float>`);
+    if (Properties.TextStrokeColor3 !== undefined) extendXML(`<Color3 name="TextStrokeColor3"><R>${limitDecimals(Properties.TextStrokeColor3.R, 3)}</R><G>${limitDecimals(Properties.TextStrokeColor3.G, 3)}</G><B>${limitDecimals(Properties.TextStrokeColor3.B, 3)}</B></Color3>`);
+    if (Properties.TextXAlignment !== undefined) extendXML(`<token name="TextXAlignment">${TextXAlignments.indexOf(Properties.TextXAlignment)}</token>`);
+    if (Properties.TextYAlignment !== undefined) extendXML(`<token name="TextYAlignment">${TextYAlignments.indexOf(Properties.TextYAlignment)}</token>`);
     if (Properties.Font !== undefined) {
         const Font = Fonts[Properties.Font.Style] || Fonts["Regular"];
-        ExtendXML(`<Font name="FontFace"><Family><url>rbxasset://fonts/families/${Properties.Font.Family}.json</url></Family><Weight>${Font.Weight}</Weight><Style>${Font.Style}</Style></Font>`);
+        extendXML(`<Font name="FontFace"><Family><url>rbxasset://fonts/families/${Properties.Font.Family}.json</url></Family><Weight>${Font.Weight}</Weight><Style>${Font.Style}</Style></Font>`);
     }
-    if (Properties.RichText !== undefined) ExtendXML(`<bool name="RichText">${Properties.RichText}</bool>`);
-    if (Properties.UploadId !== undefined && ImageExports[Properties.UploadId] !== undefined) ExtendXML(`<string name="Image"><url>${ImageExports[Properties.UploadId].ImageId}</url></string>`); // Image is exported
-    else if (Properties.Image !== undefined) ExtendXML(`<string name="Image">${Properties.Image}</string>`); // Image is not exported
-    if (Properties.ImageTransparency !== undefined) ExtendXML(`<float name="ImageTransparency">${1 - LimitDecimals(Properties.ImageTransparency, 3)}</float>`);
-    if (Properties.Visible !== undefined) ExtendXML(`<bool name="Visible">${Properties.Visible}</bool>`);
-    if (Properties.Enabled !== undefined) ExtendXML(`<bool name="Enabled">${Properties.Enabled}</bool>`);
+    if (Properties.RichText !== undefined) extendXML(`<bool name="RichText">${Properties.RichText}</bool>`);
+    if (Properties.UploadId !== undefined && ImageExports[Properties.UploadId] !== undefined) extendXML(`<string name="Image"><url>${ImageExports[Properties.UploadId].ImageId}</url></string>`); // Image is exported
+    else if (Properties.Image !== undefined) extendXML(`<string name="Image">${Properties.Image}</string>`); // Image is not exported
+    if (Properties.ImageTransparency !== undefined) extendXML(`<float name="ImageTransparency">${1 - limitDecimals(Properties.ImageTransparency, 3)}</float>`);
+    if (Properties.Visible !== undefined) extendXML(`<bool name="Visible">${Properties.Visible}</bool>`);
+    if (Properties.Enabled !== undefined) extendXML(`<bool name="Enabled">${Properties.Enabled}</bool>`);
 
     // End of properties
 
-    ExtendXML("</Properties>");
+    extendXML("</Properties>");
 
     // Add children
 
     if (Properties.Children !== undefined && Properties.Children.length > 0 && Properties.NoChildren === undefined) {
         for (var i = 0; i < Properties.Children.length; i++) {
-            ExtendXML(CreateRobloxElement(Properties.Children[i], i));
+            extendXML(createRobloxElement(Properties.Children[i], i));
         }
     }
 
     return XML + "</Item>";
 }
 
-function ConvertToRoblox(Objects) { // Converts the objects into roblox xml format
+function convertToXML(Objects) { // Converts the objects into roblox xml format
     var XML = '<!--\n\tGenerated by Figma to Roblox\n\tReport any bugs/issues to NoTwistedHere#6703\n-->\n\n<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4"><Meta name="ExplicitAutoJoints">true</Meta>';
 
     for (var i = 0; i < Objects.length; i++) {
-        XML += CreateRobloxElement(Objects[i]);
+        XML += createRobloxElement(Objects[i]);
     }
 
     return XML + '</roblox>';
 }
+// XML Exporting End
 
-// Fusion Conversion
-
+// Fustion Exporting
 const FusionFunctionCreators = {
     "FontFace": createFontFusionFunction,
     "Position": createUDim2FusionFunction,
@@ -1035,11 +1036,11 @@ function createFontFusionFunction(font) {
 }
 
 function createUDimFusionFunction(udim) {
-    return `UDim.new(${LimitDecimals(udim.S, 0)}, ${LimitDecimals(udim.O, 0)})`;
+    return `UDim.new(${limitDecimals(udim.S, 0)}, ${limitDecimals(udim.O, 0)})`;
 }
 
 function createUDim2FusionFunction(udim2) {
-    return `UDim2.fromOffset(${LimitDecimals(udim2.X, 0)}, ${LimitDecimals(udim2.Y, 0)})`;
+    return `UDim2.fromOffset(${limitDecimals(udim2.X, 0)}, ${limitDecimals(udim2.Y, 0)})`;
 }
 
 function createEnumFusionFunction(enumName) {
@@ -1048,11 +1049,11 @@ function createEnumFusionFunction(enumName) {
 }
 
 function createTransparencyFusionFunction(number) {
-    return 1 - LimitDecimals(number, 3);
+    return 1 - limitDecimals(number, 3);
 }
 
 function createPixelSizeFusionFunction(number) {
-    return LimitDecimals(number, 0);
+    return limitDecimals(number, 0);
 }
 
 function createColorFusionFunction(color) {
@@ -1080,9 +1081,9 @@ function formatCase(str) {
 }
 
 function get255Color(color) {
-    const r = LimitDecimals(color.R * 255, 0);
-    const g = LimitDecimals(color.G * 255, 0);
-    const b = LimitDecimals(color.B * 255, 0);
+    const r = limitDecimals(color.R * 255, 0);
+    const g = limitDecimals(color.G * 255, 0);
+    const b = limitDecimals(color.B * 255, 0);
     return `Color3.fromRGB(${r}, ${g}, ${b})`;
 }
 
@@ -1094,7 +1095,7 @@ function addIndentation(str, depth = 1) {
     return indentedLines.join('\n');
 }
 
-function PropertyToFusion(propertyName, propertyValue) {
+function propertyToFusion(propertyName, propertyValue) {
     if (propertyValue !== undefined) {
         if (FusionFunctionCreators[propertyName] !== undefined) {
             propertyValue = FusionFunctionCreators[propertyName](propertyValue)
@@ -1104,10 +1105,10 @@ function PropertyToFusion(propertyName, propertyValue) {
         return ""
 }
 
-function CreateFusionElement(Properties) { // Creates the fusion code for the element
+function createFusionElement(Properties) { // Creates the fusion code for the element
     var FUSION_CODE = "";
 
-    function ExtendCode(str) {
+    function extendCode(str) {
         FUSION_CODE += str;
     }
 
@@ -1140,21 +1141,21 @@ function CreateFusionElement(Properties) { // Creates the fusion code for the el
     ];
 
     for (const property of propertiesToExtend) {
-        ExtendCode(PropertyToFusion(property.key, property.value ? property.value : Properties[property.key]));
+        extendCode(propertyToFusion(property.key, property.value ? property.value : Properties[property.key]));
     }
 
     if (Properties.UploadId !== undefined && ImageExports[Properties.UploadId] !== undefined)
-        ExtendCode(PropertyToFusion("Image", ImageExports[Properties.UploadId].ImageId))
+        extendCode(propertyToFusion("Image", ImageExports[Properties.UploadId].ImageId))
 
     if (Properties.Colour !== undefined) {
         var Colour = Properties.Colour;
 
         if (Colour["R"] !== undefined) {
-            ExtendCode(PropertyToFusion("Color", Properties.Colour))
+            extendCode(propertyToFusion("Color", Properties.Colour))
         } else {
             const keyframeCount = Colour.length;
             if (keyframeCount == 1) {
-                ExtendCode(`\nColor = ColorSequence.new(${get255Color(Colour[i])}),`)
+                extendCode(`\nColor = ColorSequence.new(${get255Color(Colour[i])}),`)
             } else {
                 var ColourSeq = "ColorSequence.new({";
 
@@ -1174,7 +1175,7 @@ function CreateFusionElement(Properties) { // Creates the fusion code for the el
                 }
 
                 ColourSeq += "\n})"
-                ExtendCode(`\nColor = ${ColourSeq},`)
+                extendCode(`\nColor = ${ColourSeq},`)
             }
         }
     }
@@ -1183,16 +1184,16 @@ function CreateFusionElement(Properties) { // Creates the fusion code for the el
         const Transparency = Properties.Transparency;
 
         if (!Array.isArray(Transparency))
-            ExtendCode(PropertyToFusion("Transparency", Transparency))
+            extendCode(propertyToFusion("Transparency", Transparency))
         else {
             const keyframeCount = Colour.length;
             if (keyframeCount == 1) {
-                ExtendCode(`\nnTransparency = NumberSequence.new(${LimitDecimals(transparency, 3)}),`)
+                extendCode(`\nnTransparency = NumberSequence.new(${limitDecimals(transparency, 3)}),`)
             } else {
                 var NumberSeq = "NumberSequence.new({";
 
                 function addKeypoint(time, transparency) {
-                    NumberSeq += `\n\tNumberSequenceKeypoint.new(${time}, ${LimitDecimals(transparency, 3)}),`;
+                    NumberSeq += `\n\tNumberSequenceKeypoint.new(${time}, ${limitDecimals(transparency, 3)}),`;
                 }
 
                 for (var i = 0; i < keyframeCount; i++) {
@@ -1207,13 +1208,13 @@ function CreateFusionElement(Properties) { // Creates the fusion code for the el
                 }
 
                 NumberSeq += "\n})"
-                ExtendCode(`\nTransparency = ${NumberSeq},`)
+                extendCode(`\nTransparency = ${NumberSeq},`)
             }
         }
     }
 
     if (Properties.Class != "ImageLabel" && Properties.Rotation !== undefined && Properties.Rotation !== 0) {
-        ExtendCode(PropertyToFusion("Rotation", LimitDecimals(Properties.Rotation, 3)))
+        extendCode(propertyToFusion("Rotation", limitDecimals(Properties.Rotation, 3)))
 
         if (Properties.Position !== undefined && Properties.Size !== undefined) {
             var Size = Properties.Size;
@@ -1226,29 +1227,30 @@ function CreateFusionElement(Properties) { // Creates the fusion code for the el
         }
     }
 
-    //ExtendCode(PropertyToFusion("FontFace", Properties.Font))
+    //extendCode(propertyToFusion("FontFace", Properties.Font))
 
     // Add children
     if (Properties.Children !== undefined && Properties.Children.length > 0 && Properties.NoChildren === undefined) {
-        ExtendCode("\n[Children] = {\n")
+        extendCode("\n[Children] = {\n")
         for (var i = 0; i < Properties.Children.length; i++) {
-            ExtendCode(addIndentation(CreateFusionElement(Properties.Children[i], i)) + ",\n");
+            extendCode(addIndentation(createFusionElement(Properties.Children[i], i)) + ",\n");
         }
-        ExtendCode("}")
+        extendCode("}")
     }
 
     // Add indentation
     return `New("${Properties.Class}")({${addIndentation(FUSION_CODE)}\n})`;;
 }
 
-function ConvertToFusion(Objects) { // Converts the objects into fusion code format
+function convertToFusion(Objects) { // Converts the objects into fusion code format
     var FUSION_CODE = ``
     for (var i = 0; i < Objects.length; i++) {
-        FUSION_CODE += CreateFusionElement(Objects[i]);
+        FUSION_CODE += createFusionElement(Objects[i]);
     }
 
     return FUSION_CODE;
 }
+// Fustion Exporting End
 
 function GetMainProperties(Object, Parent) {
     if (ElementTypes[Object.type] !== undefined) {
@@ -1281,7 +1283,7 @@ async function RunPlugin() {
 
     Notify("Formatting...");
 
-    var FILE = ConvertToFusion(Objects);
+    var FILE = convertToFusion(Objects);
 
     Objects = null;
 
