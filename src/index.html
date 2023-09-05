@@ -5,10 +5,10 @@
 <label for="apikey">Cloud API Key (optional)</label>
 <input type="text" id="apikey" placeholder="Cloud API Key" />
 <div></div>
-<label for="userid">User ID</label>
-<input type="text" id="userid" placeholder="User ID" />
+<label for="uploaderid">Uploader ID</label>
+<input type="text" id="uploaderid" placeholder="Uploader ID" />
 <div></div>
-<label for="userid">Custom Proxy</label>
+<label for="uploaderid">Custom Proxy</label>
 <input type="text" id="prox" placeholder="Proxy URL" />
 <div></div>
 <label for="uploadImages">Upload Images</label>
@@ -16,6 +16,8 @@
 <div></div>
 <label for="exportImages">Export Images</label>
 <input type="checkbox" id="exportImages" name="Export Images" />
+<label for="isGroup">Group?</label>
+<input type="checkbox" id="isGroup" name="Group?" />
 <!-- get things :) -->
 <script src="https://unpkg.com/axios@1.4.0/dist/axios.min.js"
     integrity="sha384-I4Qw/vWb/sK/7VwepTtkaq636YLYClbEgEwKp3ueUCvjiLFrcoKUFAY5mOl40Fj3"
@@ -25,10 +27,11 @@
     crossorigin="anonymous"></script>
 <script>
     var CloudApiKey = ""
-    var UserId = ""
+    var UploaderId = ""
     var Proxy = ""
     var ExportImages = false
     var UploadImages = false
+    var IsGroup = false
 
     document.getElementById("closeplugin").onclick = () => {
         parent.postMessage({ pluginMessage: { type: 'close-plugin' } }, '*')
@@ -40,9 +43,9 @@
         CloudApiKey = document.getElementById("apikey").value
         parent.postMessage({ pluginMessage: { type: 'SetAsync', key: "CloudApiKey", value: CloudApiKey } }, '*')
     }
-    document.getElementById("userid").onchange = () => {
-        UserId = document.getElementById("userid").value
-        parent.postMessage({ pluginMessage: { type: 'SetAsync', key: "UserId", value: UserId } }, '*')
+    document.getElementById("uploaderid").onchange = () => {
+        UploaderId = document.getElementById("uploaderid").value
+        parent.postMessage({ pluginMessage: { type: 'SetAsync', key: "UploaderId", value: UploaderId } }, '*')
     }
     document.getElementById("prox").onchange = () => {
         Proxy = document.getElementById("prox").value
@@ -55,6 +58,10 @@
     document.getElementById("exportImages").onchange = () => {
         ExportImages = document.getElementById("exportImages").checked
         parent.postMessage({ pluginMessage: { type: 'SetAsync', key: "ExportImages", value: ExportImages } }, '*')
+    }
+    document.getElementById("isGroup").onchange = () => {
+        IsGroup = document.getElementById("isGroup").checked
+        parent.postMessage({ pluginMessage: { type: 'SetAsync', key: "IsGroup", value: IsGroup } }, '*')
     }
 
     parent.postMessage({ pluginMessage: { type: 'FetchAsync' } }, '*')
@@ -102,7 +109,7 @@
                     Images.push(data);
                 }
 
-                if (CloudApiKey == "" || UserId == "" || !UploadImages) {
+                if (CloudApiKey == "" || UploaderId == "" || !UploadImages) {
                     parent.postMessage({ pluginMessage: { type: 'image-upload-fail', data: "Cloud API Key is not set" } }, '*')
                     return;
                 }
@@ -113,7 +120,7 @@
                     description: "Exported from Figma using Figma to Roblox",
                     creationContext: {
                         creator: {
-                            userId: parseFloat(UserId)
+                            [IsGroup ? "groupId" : "userId"]: parseFloat(UploaderId)
                         }
                     }
                 }));
@@ -157,9 +164,9 @@
                         document.getElementById("apikey").value = data.value
                         CloudApiKey = data.value
                         break;
-                    case "UserId":
-                        document.getElementById("userid").value = data.value
-                        UserId = data.value
+                    case "UploaderId":
+                        document.getElementById("uploaderid").value = data.value
+                        UploaderId = data.value
                         break;
                     case "ExportImages":
                         document.getElementById("exportImages").checked = data.value
@@ -168,6 +175,10 @@
                     case "UploadImages":
                         document.getElementById("uploadImages").checked = data.value
                         UploadImages = data.value
+                        break;
+                    case "IsGroup":
+                        document.getElementById("isGroup").checked = data.value
+                        IsGroup = data.value
                         break;
                     case "Proxy":
                         document.getElementById("prox").value = data.value
