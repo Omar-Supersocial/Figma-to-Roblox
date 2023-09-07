@@ -496,322 +496,172 @@ const PropertyTypes = {
     }
 }
 
+const createCommonProperties = (Element, Parent) => {
+    const Properties = {
+        Class: "Frame",
+        Type: Element.type,
+        Name: Element.name,
+        BackgroundTransparency: 0,
+        BorderSizePixel: 0,
+        Visible: Element.visible,
+        AbsoulutePosition: {
+            X: Element.x,
+            Y: Element.y
+        },
+        AbsouluteSize: {
+            X: Element.width,
+            Y: Element.height
+        },
+        Rotation: Element.rotation,
+        Children: [],
+        Parent: Parent,
+        Element: Element,
+    };
+    if (Parent !== undefined) {
+        if (Parent._OriginalPosition !== undefined) {
+            Properties.AbsoulutePosition.X -= Parent._OriginalPosition.X;
+            Properties.AbsoulutePosition.Y -= Parent._OriginalPosition.Y;
+        }
+
+        if (Parent.AbsouluteSize !== undefined) {
+            Properties.Size = {
+                X: Properties.AbsouluteSize.X / Parent.AbsouluteSize.X,
+                Y: Properties.AbsouluteSize.Y / Parent.AbsouluteSize.Y,
+            };
+            Properties.Position = {
+                X: Properties.AbsoulutePosition.X / Parent.AbsouluteSize.X,
+                Y: Properties.AbsoulutePosition.Y / Parent.AbsouluteSize.Y,
+            };
+        }
+    } else {
+        Properties.Children.push({
+            Class: "UIAspectRatioConstraint",
+            Type: "UIAspectRatioConstraint",
+            AspectRatio: Properties.AbsouluteSize.X / Properties.AbsouluteSize.Y,
+            Children: []
+        });
+        Properties.Position = {
+            X: 0,
+            Y: 0,
+        };
+    }
+
+    return Properties;
+};
+
+const applyPropertyTypes = (Element, Properties) => {
+    if (PropertyTypes["exportSettings"](Element, Properties) === false) {
+        for (const Property in Element) {
+            if (Property in PropertyTypes && Property !== "exportSettings") {
+                if (PropertyTypes[Property](Element, Properties) === false) return false;
+            }
+        }
+    }
+};
+
 const ElementTypes = {
     ["COMPONENT_SET"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
     ["COMPONENT"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
     ["NOT_RELATIVE_GROUP"]: (Element, Parent) => {
-        var Properties = {
-            Class: "Frame",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: 0,
-            BorderSizePixel: 0,
-            GroupOpacity: Element.opacity,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
 
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-        }
+        // Additional properties specific to NOT_RELATIVE_GROUP type
+        Properties.GroupOpacity = Element.opacity;
 
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity;
 
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["GROUP"]: (Element, Parent) => {
-        var Properties = {
-            Class: "Frame",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: 0,
-            BorderSizePixel: 0,
-            GroupOpacity: Element.opacity,
-            Visible: Element.visible,
-            _OriginalPosition: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
 
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-        }
+        // Additional properties specific to GROUP type
+        Properties.GroupOpacity = Element.opacity;
+        Properties._OriginalPosition = {
+            X: Element.x,
+            Y: Element.y
+        };
 
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity;
 
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["FRAME"]: (Element, Parent) => {
-        var Properties = {
-            Class: "Frame",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: Element.opacity,
-            BorderSizePixel: 0,
-            GroupOpacity: Element.opacity,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Rotation: -Element.rotation,
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
+
+        // Additional properties specific to FRAME type
+        Properties.BackgroundTransparency = Element.opacity;
+        Properties.Rotation = -Properties.Rotation;
+        Properties.GroupOpacity = Element.opacity;
 
         if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-
-            Properties.BackgroundTransparency = Properties.GroupOpacity // simple fix
+            if (Parent.GroupOpacity !== undefined) Properties.GroupOpacity = Parent.GroupOpacity * Properties.GroupOpacity;
+            Properties.BackgroundTransparency = Properties.GroupOpacity
         }
 
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
-
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["RECTANGLE"]: (Element, Parent) => {
-        var Properties = {
-            Class: "Frame",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: Element.opacity,
-            BorderSizePixel: 0,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Rotation: -Element.rotation,
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
 
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.BackgroundTransparency = Parent.GroupOpacity * Properties.BackgroundTransparency; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-        }
+        // Additional properties specific to RECTANGLE type
+        Properties.BackgroundTransparency = Element.opacity;
+        Properties.Rotation = -Properties.Rotation;
 
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.BackgroundTransparency = Parent.GroupOpacity * Properties.BackgroundTransparency;
 
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["ELLIPSE"]: (Element, Parent) => {
-        var Properties = {
-            Class: "Frame",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: Element.opacity,
-            BorderSizePixel: 0,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Rotation: Element.rotation,
-            Children: [
-                {
-                    Class: "UICorner",
-                    Type: "UICorner",
-                    CornerRadius: {
-                        S: 1,
-                        O: 0,
-                    }
-                }
-            ],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
 
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.BackgroundTransparency = Parent.GroupOpacity * Properties.BackgroundTransparency; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
+        // Additional properties specific to ELLIPSE type
+        Properties.BackgroundTransparency = Element.opacity;
+        Properties.Children.push({
+            Class: "UICorner",
+            Type: "UICorner",
+            CornerRadius: {
+                S: 1,
+                O: 0,
             }
-        }
+        });
 
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.BackgroundTransparency = Parent.GroupOpacity * Properties.BackgroundTransparency;
 
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["TEXT"]: (Element, Parent) => {
-        /*
-            === WARNING ===
+        const Properties = createCommonProperties(Element, Parent);
 
-            Some fonts are not supported by Roblox.
-            
-            If you don't see the text in Roblox, check the following:
+        // Additional properties specific to TEXT type
+        Properties.Class = "TextLabel";
+        Properties.TextTransparency = Element.opacity;
+        Properties.TextSize = Element.fontSize === figma.mixed ? 0 : Element.fontSize;
+        Properties.TextXAlignment = Element.textAlignHorizontal;
+        Properties.TextYAlignment = Element.textAlignVertical;
+        Properties.Text = Element.characters;
 
-                Check the output for a message saying "Temp read failed"
-                if FontFace says "Temp read failed."" This means the font is not supported. (in a red boarder)
-                if FontFace/Weight says "(unavailable)" This means the font style is not supported.
-        */
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.TextTransparency = Parent.GroupOpacity * Properties.TextTransparency;
 
-        var Properties = {
-            Class: "TextLabel",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: 0,
-            BorderSizePixel: 0,
-            TextTransparency: Element.opacity,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            TextSize: Element.fontSize == figma.mixed ? 0 : Element.fontSize,
-            TextXAlignment: Element.textAlignHorizontal,
-            TextYAlignment: Element.textAlignVertical,
-            Text: Element.characters,
-            Rotation: Element.rotation,
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
-
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.TextTransparency = Parent.GroupOpacity * Properties.TextTransparency; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-        }
-
-        if (PropertyTypes["exportSettings"](Element, Properties) === false) {
-            for (const Property in Element) {
-                if (Property in PropertyTypes) {
-                    if (Property === "exportSettings") continue; // Already done
-                    if (PropertyTypes[Property](Element, Properties) === false) return false;
-                }
-            }
-        }
-
+        applyPropertyTypes(Element, Properties);
         return Properties;
     },
     ["OTHER"]: (Element, Parent) => {
-        var Properties = {
-            Class: "ImageLabel",
-            Type: Element.type,
-            Name: Element.name,
-            BackgroundTransparency: 0,
-            ImageTransparency: Element.opacity,
-            Visible: Element.visible,
-            Position: {
-                X: Element.x,
-                Y: Element.y
-            },
-            Size: {
-                X: Element.width,
-                Y: Element.height
-            },
-            Rotation: Element.rotation,
-            Children: [],
-            Parent: Parent,
-            Element: Element,
-        }
+        const Properties = createCommonProperties(Element, Parent);
 
-        if (Parent !== undefined) {
-            if (Parent.GroupOpacity !== undefined) Properties.ImageTransparency = Parent.GroupOpacity * Properties.ImageTransparency; // maths :)
-            if (Parent._OriginalPosition !== undefined) {
-                Properties.Position.X -= Parent._OriginalPosition.X;
-                Properties.Position.Y -= Parent._OriginalPosition.Y;
-            }
-        }
+        // Additional properties specific to OTHER type
+        Properties.Class = "ImageLabel";
+        Properties.ImageTransparency = Element.opacity;
 
         if (Element["children"]) PropertyTypes["children"](Element, Properties);
+        if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.ImageTransparency = Parent.GroupOpacity * Properties.ImageTransparency; // maths :)
 
         ExportImage(Element, Properties);
-
         return Properties;
     }
 }
@@ -1006,8 +856,8 @@ function convertToXML(Objects) { // Converts the objects into roblox xml format
 // Fustion Exporting
 const FusionFunctionCreators = {
     "FontFace": createFontFusionFunction,
-    "Position": createUDim2FusionFunction,
-    "Size": createUDim2FusionFunction,
+    "Position": createUDim2SizeFusionFunction,
+    "Size": createUDim2SizeFusionFunction,
     "CornerRadius": createUDimFusionFunction,
     "TextXAlignment": createEnumFusionFunction,
     "TextYAlignment": createEnumFusionFunction,
@@ -1039,8 +889,12 @@ function createUDimFusionFunction(udim) {
     return `UDim.new(${limitDecimals(udim.S, 0)}, ${limitDecimals(udim.O, 0)})`;
 }
 
-function createUDim2FusionFunction(udim2) {
+function createUDim2OffsetFusionFunction(udim2) {
     return `UDim2.fromOffset(${limitDecimals(udim2.X, 0)}, ${limitDecimals(udim2.Y, 0)})`;
+}
+
+function createUDim2SizeFusionFunction(udim2) {
+    return `UDim2.fromScale(${limitDecimals(udim2.X, 3)}, ${limitDecimals(udim2.Y, 3)})`;
 }
 
 function createEnumFusionFunction(enumName) {
@@ -1120,8 +974,7 @@ function createFusionElement(Properties) { // Creates the fusion code for the el
         { key: "TextYAlignment", value: Properties.TextYAlignment ? "TextYAlignment." + Properties.TextYAlignment : undefined },
         { key: "LineJoinMode", value: Properties.LineJoinMode ? "LineJoinMode." + Properties.LineJoinMode : undefined },
         { key: "CornerRadius" },
-        { key: "Position" },
-        { key: "Size" },
+        { key: "AspectRatio" },
         { key: "BackgroundColor3" },
         { key: "TextStrokeColor3" },
         { key: "TextColor3" },
@@ -1143,6 +996,17 @@ function createFusionElement(Properties) { // Creates the fusion code for the el
     for (const property of propertiesToExtend) {
         extendCode(propertyToFusion(property.key, property.value ? property.value : Properties[property.key]));
     }
+
+    if (Properties.Size !== undefined)
+        extendCode(propertyToFusion("Size", Properties.Size))
+    else if (Properties.AbsouluteSize !== undefined)
+        extendCode(`\nSize = ${createUDim2OffsetFusionFunction(Properties.AbsouluteSize)},`)
+
+    if (Properties.Position !== undefined)
+        extendCode(propertyToFusion("Position", Properties.Position))
+    else if (Properties.AbsoulutePosition !== undefined)
+        extendCode(`\nPosition = ${createUDim2OffsetFusionFunction(Properties.AbsoulutePosition)},`)
+
 
     if (Properties.UploadId !== undefined && ImageExports[Properties.UploadId] !== undefined)
         extendCode(propertyToFusion("Image", ImageExports[Properties.UploadId].ImageId))
