@@ -645,6 +645,7 @@ const ElementTypes = {
         Properties.TextXAlignment = Element.textAlignHorizontal;
         Properties.TextYAlignment = Element.textAlignVertical;
         Properties.Text = Element.characters;
+        Properties.TextScaled = true;
 
         if (Parent !== undefined && Parent.GroupOpacity !== undefined) Properties.TextTransparency = Parent.GroupOpacity * Properties.TextTransparency;
 
