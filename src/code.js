@@ -561,7 +561,24 @@ const applyPropertyTypes = (Element, Properties) => {
 
 const ElementTypes = {
     ["COMPONENT_SET"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
-    ["COMPONENT"]: (Element, Parent) => ElementTypes["NOT_RELATIVE_GROUP"](Element, Parent),
+    ["COMPONENT"]: (Element, Parent) => {
+        const Properties = createCommonProperties(Element, Parent);
+
+        // Check if there's a UIAspectRatioConstraint in Children
+        const hasAspectRatioConstraint = Properties.Children.some(child => child.Class === "UIAspectRatioConstraint");
+        // If there's no UIAspectRatioConstraint, add one
+        if (!hasAspectRatioConstraint) {
+            Properties.Children.push({
+                Class: "UIAspectRatioConstraint",
+                Type: "UIAspectRatioConstraint",
+                AspectRatio: Properties.AbsoluteSize.X / Properties.AbsoluteSize.Y,
+                Children: []
+            });
+        }
+
+        applyPropertyTypes(Element, Properties);
+        return Properties;
+    },
     ["NOT_RELATIVE_GROUP"]: (Element, Parent) => {
         const Properties = createCommonProperties(Element, Parent);
 
